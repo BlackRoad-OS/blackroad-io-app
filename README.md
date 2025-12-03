@@ -9,6 +9,7 @@ This directory contains the static site served at **blackroad.io** via GitHub Pa
 - `login.html` – Development login form accepting any non-empty credentials.
 - `chat.html` – Placeholder for the Lucidia public-facing AI chat and terminal.
 - `composer.html` – Placeholder for the Composer Playground.
+- `dashboard.html` – Manual overview of site components and links.
 - `status.html` – Manual system status page.
 - `style.css` – Shared styling for all pages.
 - `script.js` – Client-side login handler.
