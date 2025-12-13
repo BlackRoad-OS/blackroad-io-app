@@ -1,43 +1,391 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BlackRoad · Lucidia</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header>
-      <h1>BlackRoad · Lucidia</h1>
-      <nav>
-        <a href="login.html">Login</a>
-        <a href="status.html">Status</a>
-        <a href="dashboard.html">Dashboard</a>
-      </nav>
-    </header>
-    <main>
-      <div class="card-container">
-        <section class="card">
-          <h2>Lucidia Public-facing AI Chat &amp; Terminal</h2>
-          <p>
-            Explore our upcoming AI chat interface and terminal environment.
-          </p>
-          <a href="chat.html">Enter Chat &amp; Terminal</a>
-        </section>
-        <section class="card">
-          <h2>Composer Playground</h2>
-          <p>Create and experiment with musical ideas in the browser.</p>
-          <a href="composer.html">Launch Composer</a>
-        </section>
-        <section class="card">
-          <h2>Operations Dashboard</h2>
-          <p>Check the status of BlackRoad properties at a glance.</p>
-          <a href="dashboard.html">View Dashboard</a>
-        </section>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlackRoad OS - 30,000 AI Agents</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --gradient: linear-gradient(135deg, #FF9D00, #FF6B00, #FF0066, #D600AA, #7700FF, #0066FF);
+      --bg: #02030a;
+      --text: #ffffff;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .auth-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1a1f3a 0%, var(--bg) 60%);
+    }
+    .auth-container {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 48px;
+      width: 400px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo {
+      font-size: 48px;
+      font-weight: 900;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .form-group { margin-bottom: 24px; }
+    label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.8; }
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-size: 16px;
+    }
+    input:focus { outline: none; border-color: #7700FF; }
+    button {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      background: var(--gradient);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover { transform: scale(1.02); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .toggle-auth { text-align: center; margin-top: 16px; font-size: 14px; opacity: 0.7; }
+    .toggle-auth a { color: #7700FF; text-decoration: none; }
+    .app-container { display: none; }
+    .navbar {
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .navbar-brand {
+      font-size: 24px;
+      font-weight: 900;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .navbar-menu { display: flex; gap: 24px; align-items: center; }
+    .navbar-menu a { color: white; text-decoration: none; opacity: 0.8; transition: opacity 0.2s; }
+    .navbar-menu a:hover { opacity: 1; }
+    .user-badge {
+      background: rgba(255,255,255,0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+    .content { max-width: 1200px; margin: 48px auto; padding: 0 32px; }
+    .hero { text-align: center; padding: 80px 0; }
+    .hero h1 { font-size: 64px; font-weight: 900; margin-bottom: 24px; }
+    .hero p { font-size: 24px; opacity: 0.8; margin-bottom: 48px; }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+      margin-top: 48px;
+    }
+    .pricing-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 24px;
+      padding: 40px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: transform 0.3s;
+    }
+    .pricing-card:hover { transform: translateY(-8px); border-color: #7700FF; }
+    .pricing-card h3 { font-size: 32px; margin-bottom: 16px; }
+    .pricing-card .price {
+      font-size: 48px;
+      font-weight: 900;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+    }
+    .pricing-card ul { list-style: none; margin-bottom: 32px; }
+    .pricing-card li { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .error {
+      background: rgba(255,0,0,0.1);
+      border: 1px solid rgba(255,0,0,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      color: #ff6b6b;
+    }
+    .success {
+      background: rgba(0,255,0,0.1);
+      border: 1px solid rgba(0,255,0,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      color: #51cf66;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-container">
+      <div class="logo">BlackRoad OS</div>
+      <div id="errorMessage" class="error hidden"></div>
+      <div id="successMessage" class="success hidden"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" value="test@blackroad.io" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" value="password123" required />
+        </div>
+        <button type="submit">Sign In</button>
+        <div class="toggle-auth">
+          Don't have an account? <a href="#" id="showRegister">Register</a>
+        </div>
+      </form>
+      <form id="registerForm" class="hidden">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="registerUsername" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="registerEmail" required />
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="registerFullName" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="registerPassword" required />
+        </div>
+        <button type="submit">Create Account</button>
+        <div class="toggle-auth">
+          Already have an account? <a href="#" id="showLogin">Sign In</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="app-container" id="appContainer">
+    <nav class="navbar">
+      <div class="navbar-brand">BlackRoad OS</div>
+      <div class="navbar-menu">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#agents">Agents</a>
+        <a href="#docs">Docs</a>
+        <div class="user-badge" id="userBadge"></div>
+        <a href="#" id="logoutBtn">Logout</a>
       </div>
-    </main>
-    <footer>
-      <p>&copy; 2024 BlackRoad Inc.</p>
-    </footer>
-  </body>
+    </nav>
+    <div class="content">
+      <div class="hero">
+        <h1>30,000 AI Agents at Your Command</h1>
+        <p>The future of computing is here</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>Starter</h3>
+          <div class="price">$49<span style="font-size:20px">/mo</span></div>
+          <ul>
+            <li>✓ 100 AI Agents</li>
+            <li>✓ 10GB Storage</li>
+            <li>✓ Basic Support</li>
+            <li>✓ Community Access</li>
+          </ul>
+          <button onclick="handleCheckout('starter', 4900)">Get Started</button>
+        </div>
+        <div class="pricing-card">
+          <h3>Pro</h3>
+          <div class="price">$149<span style="font-size:20px">/mo</span></div>
+          <ul>
+            <li>✓ 1,000 AI Agents</li>
+            <li>✓ 100GB Storage</li>
+            <li>✓ Priority Support</li>
+            <li>✓ Advanced Analytics</li>
+          </ul>
+          <button onclick="handleCheckout('pro', 14900)">Get Started</button>
+        </div>
+        <div class="pricing-card">
+          <h3>Enterprise</h3>
+          <div class="price">$499<span style="font-size:20px">/mo</span></div>
+          <ul>
+            <li>✓ 30,000 AI Agents</li>
+            <li>✓ Unlimited Storage</li>
+            <li>✓ 24/7 Support</li>
+            <li>✓ Custom Integration</li>
+          </ul>
+          <button onclick="handleCheckout('enterprise', 49900)">Get Started</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const API_BASE = 'https://core.blackroad.systems';
+    let currentUser = null;
+    let authToken = localStorage.getItem('authToken');
+    const stripe = Stripe('pk_test_51QTdFgP9LkdZ0rQk8kLPHxZMqB8LkMbQNE09vzZYNQz2AxRpG3yVRpLhHOtJdhCvK1hkWlJlV1EFLb5yh3Dq7NU600wLO0Bupq');
+    const authScreen = document.getElementById('authScreen');
+    const appContainer = document.getElementById('appContainer');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+
+    document.getElementById('showRegister').addEventListener('click', (e) => {
+      e.preventDefault();
+      loginForm.classList.add('hidden');
+      registerForm.classList.remove('hidden');
+      hideMessages();
+    });
+    document.getElementById('showLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      registerForm.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+      hideMessages();
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      try {
+        const formData = new FormData();
+        formData.append('username', email);
+        formData.append('password', password);
+        const response = await fetch(`${API_BASE}/api/auth/token`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!response.ok) throw new Error('Invalid credentials');
+        const data = await response.json();
+        authToken = data.access_token;
+        localStorage.setItem('authToken', authToken);
+        await loadUser();
+        showApp();
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+      const username = document.getElementById('registerUsername').value;
+      const email = document.getElementById('registerEmail').value;
+      const fullName = document.getElementById('registerFullName').value;
+      const password = document.getElementById('registerPassword').value;
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, full_name: fullName, password })
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Registration failed');
+        }
+        showSuccess('Account created! Please sign in.');
+        registerForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+
+    async function loadUser() {
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!response.ok) throw new Error('Failed to load user');
+        currentUser = await response.json();
+        document.getElementById('userBadge').textContent = currentUser.username;
+      } catch (error) {
+        localStorage.removeItem('authToken');
+        authToken = null;
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('authToken');
+      authToken = null;
+      currentUser = null;
+      authScreen.classList.remove('hidden');
+      appContainer.classList.add('hidden');
+    });
+
+    async function handleCheckout(plan, amount) {
+      if (!authToken) {
+        showError('Please sign in first');
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/api/stripe/payment-intents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            amount,
+            currency: 'usd',
+            description: `BlackRoad OS - ${plan}`,
+            metadata: { plan, user_email: currentUser.email }
+          })
+        });
+        if (!response.ok) throw new Error('Checkout failed');
+        const data = await response.json();
+        showSuccess(`Payment created! Plan: ${plan}`);
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function showApp() {
+      authScreen.classList.add('hidden');
+      appContainer.classList.remove('hidden');
+    }
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove('hidden');
+    }
+    function showSuccess(message) {
+      successMessage.textContent = message;
+      successMessage.classList.remove('hidden');
+    }
+    function hideMessages() {
+      errorMessage.classList.add('hidden');
+      successMessage.classList.add('hidden');
+    }
+    if (authToken) {
+      loadUser().then(() => {
+        if (currentUser) showApp();
+      });
+    }
+  </script>
+</body>
 </html>
