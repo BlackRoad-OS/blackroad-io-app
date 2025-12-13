@@ -8,7 +8,7 @@ class BlackRoadAPI {
     // API configuration
     this.API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8000'
-      : 'https://api.blackroad.io';  // We'll set up CNAME for this
+      : 'https://core.blackroad.systems';  // Core backend API (deploy backend here)
 
     // Auth state
     this.authToken = localStorage.getItem('blackroad_auth_token');
