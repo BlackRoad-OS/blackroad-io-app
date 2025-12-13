@@ -125,30 +125,23 @@
     </div>
   </div>
 
+  <!-- BlackRoad Unified API -->
+  <script src="/blackroad-api.js"></script>
   <script>
-    const API_BASE = 'https://core.blackroad.systems';
-    let authToken = localStorage.getItem('authToken');
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
+    let conversationId = null;
 
     // Check auth status
     async function checkAuth() {
-      if (!authToken) {
+      if (!window.blackroad.isAuthenticated()) {
         document.getElementById('userInfo').textContent = 'Guest Mode';
         return;
       }
       try {
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        if (response.ok) {
-          const user = await response.json();
-          document.getElementById('userInfo').textContent = user.username;
-        } else {
-          localStorage.removeItem('authToken');
-          authToken = null;
-        }
+        const user = await window.blackroad.loadCurrentUser();
+        document.getElementById('userInfo').textContent = user?.name || user?.email || 'User';
       } catch (error) {
         console.error('Auth check failed:', error);
       }
@@ -167,24 +160,14 @@
       const loadingId = addMessage('assistant', 'BlackRoad AI', '<div class="loading">Thinking...</div>');
 
       try {
-        const response = await fetch(`${API_BASE}/api/ai-chat/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-          },
-          body: JSON.stringify({ message })
-        });
+        const data = await window.blackroad.chat(message, conversationId);
+        conversationId = data.conversation_id;
 
-        if (!response.ok) throw new Error('Chat failed');
-
-        const data = await response.json();
-        
         // Remove loading message
         document.getElementById(loadingId).remove();
-        
+
         // Add AI response
-        addMessage('assistant', 'BlackRoad AI', data.response || 'I received your message!');
+        addMessage('assistant', 'BlackRoad AI', data.message || 'I received your message!');
       } catch (error) {
         document.getElementById(loadingId).remove();
         addMessage('assistant', 'BlackRoad AI', 'Sorry, I encountered an error. Please try again.');
