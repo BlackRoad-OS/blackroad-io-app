@@ -248,12 +248,9 @@
       </div>
     </div>
   </div>
-  <!-- Mock API for development -->
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- BlackRoad Unified API -->
+  <script src="/blackroad-api.js"></script>
   <script>
-    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://blackroad.io/api-proxy.php';
-    let currentUser = null;
-    let authToken = localStorage.getItem('authToken');
     const stripe = Stripe('pk_test_51QTdFgP9LkdZ0rQk8kLPHxZMqB8LkMbQNE09vzZYNQz2AxRpG3yVRpLhHOtJdhCvK1hkWlJlV1EFLb5yh3Dq7NU600wLO0Bupq');
     const authScreen = document.getElementById('authScreen');
     const appContainer = document.getElementById('appContainer');
@@ -281,18 +278,7 @@
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
       try {
-        const formData = new FormData();
-        formData.append('username', email);
-        formData.append('password', password);
-        const response = await fetch(`${API_BASE}/api/auth/token`, {
-          method: 'POST',
-          body: formData
-        });
-        if (!response.ok) throw new Error('Invalid credentials');
-        const data = await response.json();
-        authToken = data.access_token;
-        localStorage.setItem('authToken', authToken);
-        await loadUser();
+        await window.blackroad.login(email, password);
         showApp();
       } catch (error) {
         showError(error.message);
@@ -302,72 +288,36 @@
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideMessages();
-      const username = document.getElementById('registerUsername').value;
       const email = document.getElementById('registerEmail').value;
-      const fullName = document.getElementById('registerFullName').value;
       const password = document.getElementById('registerPassword').value;
+      const name = document.getElementById('registerFullName')?.value || document.getElementById('registerUsername')?.value;
       try {
-        const response = await fetch(`${API_BASE}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, full_name: fullName, password })
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.detail || 'Registration failed');
-        }
-        showSuccess('Account created! Please sign in.');
-        registerForm.classList.add('hidden');
-        loginForm.classList.remove('hidden');
+        await window.blackroad.register(email, password, name);
+        showApp();
       } catch (error) {
         showError(error.message);
       }
     });
 
     async function loadUser() {
-      try {
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        if (!response.ok) throw new Error('Failed to load user');
-        currentUser = await response.json();
-        document.getElementById('userBadge').textContent = currentUser.username;
-      } catch (error) {
-        localStorage.removeItem('authToken');
-        authToken = null;
+      const user = await window.blackroad.loadCurrentUser();
+      if (user) {
+        document.getElementById('userBadge').textContent = user.name || user.email;
       }
     }
 
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
       e.preventDefault();
-      localStorage.removeItem('authToken');
-      authToken = null;
-      currentUser = null;
-      authScreen.classList.remove('hidden');
-      appContainer.classList.add('hidden');
+      window.blackroad.logout();
     });
 
     async function handleCheckout(plan, amount) {
-      if (!authToken) {
+      if (!window.blackroad.isAuthenticated()) {
         showError('Please sign in first');
         return;
       }
       try {
-        const response = await fetch(`${API_BASE}/api/stripe/payment-intents`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            amount,
-            currency: 'usd',
-            description: `BlackRoad OS - ${plan}`,
-            metadata: { plan, user_email: currentUser.email }
-          })
-        });
-        if (!response.ok) throw new Error('Checkout failed');
-        const data = await response.json();
+        const data = await window.blackroad.createCheckoutSession(plan, amount);
         showSuccess(`Payment created! Plan: ${plan}`);
       } catch (error) {
         showError(error.message);
@@ -390,10 +340,8 @@
       errorMessage.classList.add('hidden');
       successMessage.classList.add('hidden');
     }
-    if (authToken) {
-      loadUser().then(() => {
-        if (currentUser) showApp();
-      });
+    if (window.blackroad.isAuthenticated()) {
+      loadUser().then(() => showApp());
     }
   </script>
 </body>
